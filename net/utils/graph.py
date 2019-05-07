@@ -31,8 +31,7 @@ class Graph():
         self.dilation = dilation
 
         self.get_edge(layout)
-        self.hop_dis = get_hop_distance(
-            self.num_node, self.edge, max_hop=max_hop)
+        self.hop_dis = get_hop_distance(self.num_node, self.edge, max_hop=max_hop)
         self.get_adjacency(strategy)
 
     def __str__(self):
@@ -101,12 +100,9 @@ class Graph():
                 for i in range(self.num_node):
                     for j in range(self.num_node):
                         if self.hop_dis[j, i] == hop:
-                            if self.hop_dis[j, self.center] == self.hop_dis[
-                                    i, self.center]:
+                            if self.hop_dis[j, self.center] == self.hop_dis[i, self.center]:
                                 a_root[j, i] = normalize_adjacency[j, i]
-                            elif self.hop_dis[j, self.
-                                              center] > self.hop_dis[i, self.
-                                                                     center]:
+                            elif self.hop_dis[j, self.center] > self.hop_dis[i, self.center]:
                                 a_close[j, i] = normalize_adjacency[j, i]
                             else:
                                 a_further[j, i] = normalize_adjacency[j, i]
