@@ -19,6 +19,9 @@ class GraphConv(nn.Module):
             bias=True
         )
 
+        self.relu = nn.ReLU()
+        self.batchnorm = nn.BatchNorm2d(out_channels)
+
     def forward(self, x, A):
         # x.shape = (# batches, # channels, # frames, # nodes)
         # A.shape = (# graphs (e.g. due to spatial config), # nodes, # nodes (Adjacency))
@@ -38,5 +41,8 @@ class GraphConv(nn.Module):
 
         if self.residual:
             x += x_original
+
+        x = self.relu(x)
+        x = self.batchnorm(x)
 
         return x, A

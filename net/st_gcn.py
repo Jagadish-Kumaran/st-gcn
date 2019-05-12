@@ -1,5 +1,7 @@
 import sys
-sys.path.append('/Users/kenziyuliu/OneDrive - The University of Sydney (Students)/USYD/honours/impl/st-gcn')
+import os
+# Add parent directory
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
 
 import torch
 import torch.nn.functional as F
@@ -29,6 +31,7 @@ class Model(nn.Module):
         num_graphs, num_nodes, _ = A.size()
         self.data_bn = nn.BatchNorm1d(in_channels * num_nodes)
 
+        # Size of node feature vector
         self.node_feats = 32
 
         # self.input_gcn_layer = GraphConv(in_channels, self.node_feats, num_graphs, residual=False)
@@ -94,8 +97,8 @@ class Model(nn.Module):
         # !!! NOTE: Stack along the node feature dimension
         x = torch.cat(gcn_outputs, dim=1)
 
-        # Apply Sqeeuze and Excitation
-        x = self.se_layer(x)
+        # # Apply Sqeeuze and Excitation
+        # x = self.se_layer(x)
 
         # Apply temporal convs
         for tconv in self.temporal_conv_layers:
