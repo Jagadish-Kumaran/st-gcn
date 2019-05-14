@@ -1,1 +1,3 @@
-pi main.py recognition -c config/st_gcn/ntu-xsub/train.yaml --batch_size 8 --device 0 --weight_decay 0.0003
+pi main.py recognition -c config/st_gcn/ntu-xsub/train.yaml --eval_interval 4
+
+pi main.py recognition -c config/st_gcn/ntu-xsub/test.yaml --weights work_dir/recognition/ntu-xsub/ST_GCN/epoch80_model.pt

@@ -1,7 +1,7 @@
-import sys
-import os
-# Add parent directory
-sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
+# import sys
+# import os
+# # Add parent directory
+# sys.path.append(os.path.abspath(os.path.join(os.getcwd(), os.pardir)))
 
 import torch
 import torch.nn.functional as F
@@ -97,8 +97,8 @@ class Model(nn.Module):
         # !!! NOTE: Stack along the node feature dimension
         x = torch.cat(gcn_outputs, dim=1)
 
-        # # Apply Sqeeuze and Excitation
-        # x = self.se_layer(x)
+        # Apply Sqeeuze and Excitation
+        x = self.se_layer(x)
 
         # Apply temporal convs
         for tconv in self.temporal_conv_layers:

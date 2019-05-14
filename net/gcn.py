@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+from net.se import SELayer
+
 
 class GraphConv(nn.Module):
     def __init__(self, in_channels, out_channels, num_graphs, residual=True):
@@ -18,6 +20,10 @@ class GraphConv(nn.Module):
             dilation=1,
             bias=True
         )
+
+        self.se = SELayer(
+            channel=out_channels,
+            reduction=8)
 
         self.relu = nn.ReLU()
         self.batchnorm = nn.BatchNorm2d(out_channels)
@@ -38,6 +44,9 @@ class GraphConv(nn.Module):
         x = x.view(N, self.num_graphs, C // self.num_graphs, T, V)
         x = torch.einsum('nkctv,kvw->nctw', (x, A))
         x = x.contiguous()
+
+        # Apply Squeeze & Excitation!
+        x = self.se(x)
 
         if self.residual:
             x += x_original

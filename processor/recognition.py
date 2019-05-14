@@ -42,7 +42,7 @@ class REC_Processor(Processor):
                                         **(self.arg.model_args))
         self.model.apply(weights_init)
         self.loss = nn.CrossEntropyLoss()
-        
+
     def load_optimizer(self):
         if self.arg.optimizer == 'SGD':
             self.optimizer = optim.SGD(
@@ -87,14 +87,35 @@ class REC_Processor(Processor):
             data = data.float().to(self.dev)
             label = label.long().to(self.dev)
 
-            # forward
-            output = self.model(data)
-            loss = self.loss(output, label)
-
-            # backward
+            # Clear gradient
             self.optimizer.zero_grad()
-            loss.backward()
+
+            real_batch_size = 8
+            splits = len(data) // real_batch_size
+            assert len(data) % real_batch_size == 0, 'Real batch size should be a factor of arg.batch_size!'
+
+            for i in range(splits):
+                left = i * real_batch_size
+                right = left + real_batch_size
+                batch_data = data[left:right]
+                batch_label = label[left:right]
+
+                # forward
+                output = self.model(batch_data)
+                loss = self.loss(output, batch_label) / float(splits)
+                loss.backward()
+
+            # Step after looping over batch splits
             self.optimizer.step()
+
+            # # forward
+            # output = self.model(data)
+            # loss = self.loss(output, label)
+
+            # # backward
+            # self.optimizer.zero_grad()
+            # loss.backward()
+            # self.optimizer.step()
 
             # statistics
             self.iter_info['loss'] = loss.data.item()
@@ -116,7 +137,7 @@ class REC_Processor(Processor):
         label_frag = []
 
         for data, label in loader:
-            
+
             # get data
             data = data.float().to(self.dev)
             label = label.long().to(self.dev)
