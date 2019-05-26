@@ -21,9 +21,9 @@ class GraphConv(nn.Module):
             bias=True
         )
 
-        self.se = SELayer(
-            channel=out_channels,
-            reduction=8)
+        # self.se = SELayer(
+        #     channel=out_channels,
+        #     reduction=8)
 
         self.relu = nn.ReLU()
         self.batchnorm = nn.BatchNorm2d(out_channels)
@@ -45,8 +45,8 @@ class GraphConv(nn.Module):
         x = torch.einsum('nkctv,kvw->nctw', (x, A))
         x = x.contiguous()
 
-        # Apply Squeeze & Excitation!
-        x = self.se(x)
+        # # Apply Squeeze & Excitation!
+        # x = self.se(x)
 
         if self.residual:
             x += x_original
