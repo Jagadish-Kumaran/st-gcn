@@ -14,6 +14,18 @@ from net.tcn import TemporalConv
 from net.utils.graph import Graph
 
 
+class BasicConv2d(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, padding=1):
+        super().__init__()
+        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=kernel_size, padding=padding)
+        self.bn = nn.BatchNorm2d(out_channels)  # Default momentum: 0.9 (pytorch uses 1-momentum)
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        x = self.conv(x)
+        x = self.bn(x)
+        return self.relu(x)
+
 class Model(nn.Module):
     def __init__(self, in_channels, num_class, graph_args,
                  edge_importance_weighting, **kwargs):
@@ -33,17 +45,25 @@ class Model(nn.Module):
 
         # Size of node feature vector
         self.node_feats = 32
+        # self.node_feats = 16
 
         # self.input_gcn_layer = GraphConv(in_channels, self.node_feats, num_graphs, residual=False)
+        # self.input_conv = BasicConv2d(in_channels, self.node_feats, kernel_size=1, padding=0)
+        self.input_conv = nn.Sequential(
+            nn.Conv2d(in_channels, self.node_feats, kernel_size=1),
+            nn.BatchNorm2d(self.node_feats),
+            nn.ReLU(inplace=True)
+        )
 
         self.num_gcn_layers = 8
         self.gcn_layers = nn.ModuleList([
-            GraphConv(self.node_feats, self.node_feats, num_graphs)
+            # GraphConv(self.node_feats, self.node_feats, num_graphs)
+            GraphConv(self.node_feats * (i+1), self.node_feats, num_graphs, residual=False)
             for i in range(self.num_gcn_layers)
         ])
 
         # Change the dimensions of the first GCN layer (which increases C)
-        self.gcn_layers[0] = GraphConv(in_channels, self.node_feats, num_graphs, residual=False)
+        # self.gcn_layers[0] = GraphConv(in_channels, self.node_feats, num_graphs, residual=False)
 
         # Edge importance on Graph
         if use_edge_importance:
@@ -54,12 +74,14 @@ class Model(nn.Module):
         else:
             self.edge_importance = [1] * self.num_gcn_layers
 
+        # Output channels of concatenation
+        # self.out_node_feats = self.num_gcn_layers * self.node_feats
+        self.out_node_feats = (self.num_gcn_layers + 1) * self.node_feats
 
-        # SE layer for stacked GCN features
-        self.out_node_feats = self.num_gcn_layers * self.node_feats
-        self.se_layer = SELayer(
-            channel=(self.out_node_feats),
-            reduction=8)
+        # # SE layer for stacked GCN features
+        # self.se_layer = SELayer(
+        #     channel=(self.out_node_feats),
+        #     reduction=8)
 
         # Temporal conv layers to squash sequence
         temp_kernel_size = 3
@@ -88,23 +110,31 @@ class Model(nn.Module):
         x = x.permute(0, 1, 3, 4, 2).contiguous()
         x = x.view(N * M, C, T, V)
 
+        cur_input = self.input_conv(x)
+
         # Forward through GCN layers
-        gcn_outputs = []
+        # gcn_outputs = []
         for gcn, importance in zip(self.gcn_layers, self.edge_importance):
-            x, _ = gcn(x, self.A * importance)
-            gcn_outputs.append(x)
+            # x, _ = gcn(x, self.A * importance)
+            out, _ = gcn(cur_input, self.A * importance)
+            cur_input = torch.cat((cur_input, out), 1)
+            # gcn_outputs.append(x)
+            # gcn_outputs.append(out)
 
         # !!! NOTE: Stack along the node feature dimension
-        x = torch.cat(gcn_outputs, dim=1)
+        # x = torch.cat(gcn_outputs, dim=1)
+        x = cur_input
 
-        # Apply Sqeeuze and Excitation
-        x = self.se_layer(x)
+        # # Apply Sqeeuze and Excitation
+        # x = self.se_layer(x)
 
         # Apply temporal convs
         for tconv in self.temporal_conv_layers:
             x = tconv(x)
 
         # Global average over each frame & each node
+        # Average pool window size = (Batch, Node features)
+        # i.e. left with (Batch, Node channels, 1, 1)
         x = F.avg_pool2d(x, x.size()[2:])
 
         # Average over the number of persons

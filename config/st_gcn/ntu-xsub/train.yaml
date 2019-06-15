@@ -23,7 +23,7 @@ model_args:
 #optim
 weight_decay: 0.0003
 base_lr: 0.1
-step: [10, 50]
+step: [10, 40, 70]
 
 # training
 device: [0]

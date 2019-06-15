@@ -48,10 +48,10 @@ class GraphConv(nn.Module):
         # # Apply Squeeze & Excitation!
         # x = self.se(x)
 
+        x = self.batchnorm(x)
         if self.residual:
             x += x_original
 
         x = self.relu(x)
-        x = self.batchnorm(x)
 
         return x, A
