@@ -90,32 +90,34 @@ class REC_Processor(Processor):
             # Clear gradient
             self.optimizer.zero_grad()
 
-            real_batch_size = 8
-            splits = len(data) // real_batch_size
-            assert len(data) % real_batch_size == 0, 'Real batch size should be a factor of arg.batch_size!'
+            # ##############################
+            # real_batch_size = 8
+            # splits = len(data) // real_batch_size
+            # assert len(data) % real_batch_size == 0, 'Real batch size should be a factor of arg.batch_size!'
 
-            for i in range(splits):
-                left = i * real_batch_size
-                right = left + real_batch_size
-                batch_data = data[left:right]
-                batch_label = label[left:right]
+            # for i in range(splits):
+            #     left = i * real_batch_size
+            #     right = left + real_batch_size
+            #     batch_data = data[left:right]
+            #     batch_label = label[left:right]
 
-                # forward
-                output = self.model(batch_data)
-                loss = self.loss(output, batch_label) / float(splits)
-                loss.backward()
+            #     # forward
+            #     output = self.model(batch_data)
+            #     loss = self.loss(output, batch_label) / float(splits)
+            #     loss.backward()
 
-            # Step after looping over batch splits
-            self.optimizer.step()
-
-            # # forward
-            # output = self.model(data)
-            # loss = self.loss(output, label)
-
-            # # backward
-            # self.optimizer.zero_grad()
-            # loss.backward()
+            # # Step after looping over batch splits
             # self.optimizer.step()
+            # #############################
+
+            # forward
+            output = self.model(data)
+            loss = self.loss(output, label)
+
+            # backward
+            self.optimizer.zero_grad()
+            loss.backward()
+            self.optimizer.step()
 
             # statistics
             self.iter_info['loss'] = loss.data.item()

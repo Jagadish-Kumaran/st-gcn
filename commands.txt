@@ -1,2 +1,2 @@
-pi main.py recognition -c config/st_gcn/ntu-xsub/train.yaml --eval_interval 4
+pi main.py recognition -c config/st_gcn/ntu-xsub/train.yaml --eval_interval 5 --save_interval 5
 pi main.py recognition -c config/st_gcn/ntu-xsub/test.yaml --weights work_dir/recognition/ntu-xsub/ST_GCN/epoch80_model.pt
